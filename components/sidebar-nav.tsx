@@ -50,12 +50,9 @@ export function SidebarNav() {
                 isActive
                   ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100"
                   : isLocked
-                    ? "text-muted-foreground/50 cursor-not-allowed opacity-50"
+                    ? "text-muted-foreground/50 opacity-75"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
               }`}
-              onClick={(e) => {
-                if (isLocked) e.preventDefault()
-              }}
             >
               <Icon className="h-5 w-5" />
               {item.label}
