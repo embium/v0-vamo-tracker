@@ -49,91 +49,62 @@ Vamo is a motivational web app designed specifically for first-time founders wor
 - Filter and search through your progress
 - Export and share your journey
 
-### 📊 Percentage Calculations & Analytics
-Vamo tracks several key metrics to help you understand your sales performance and pipeline health. Here's how each percentage is calculated:
+### 📊 Relationship Tags (Warmth Score)
 
-#### Relationship Breakdown Percentages
-For each relationship type (Know them well, Talked once, Don't know them):
-- Count how many leads have that relationship type
-- Divide that count by the total number of leads
-- Multiply by 100 to get the percentage
-- Round to the nearest whole number
+**Know them well = 70-80%**
+- This is a warm lead, you have an existing relationship
+- They trust you already, much more likely to buy
+- Color: Green or dark green
 
-**Example**: If you have 20 total leads and 8 are "Know them well", that's 40%.
+**Talked once = 40-50%**
+- Medium warmth, there's some connection but not strong
+- They know who you are but relationship is new
+- Color: Yellow or orange
 
-#### Stage Distribution Percentages
-For each stage in the pipeline (Set up call, Discovery call, Demo, Pricing call, Secured):
-- Count how many leads are at that stage
-- Divide by total number of leads
-- Multiply by 100 and round
+**Don't know them = 15-25%**
+- Cold lead, no existing relationship or trust built yet
+- Hardest to convert, lowest likelihood
+- Color: Red or light red
 
-This shows you where most of your leads are stuck or progressing through.
+### 📈 Stage Tags (Progress Score)
 
-#### Win Rate
-This measures how well you're closing deals:
-- Count total "Secured" customers
-- Count total "Did not close" leads
-- Add those together to get total closed deals (won + lost)
-- Divide secured by total closed deals, multiply by 100
-- This tells you: "Of all the deals I've closed, what percentage did I win?"
+**Set up call = 20%**
+- Just starting, very early stage
+- Most leads drop off here
+- Color: Light gray or pale blue
 
-**Example**: 7 secured + 3 lost = 10 closed deals. 7÷10 = 70% win rate.
+**Discovery call = 35-40%**
+- Made it past first contact, showing interest
+- Still early but better than setup stage
+- Color: Blue
 
-#### Overall Conversion Rate
-This is simpler:
-- Secured customers divided by ALL leads (including ones still in progress)
-- Multiply by 100
-- This tells you what percentage of everyone you've talked to became a customer
+**Demo = 55-60%**
+- Invested enough time to see a demo, serious interest
+- Over halfway there
+- Color: Purple or medium blue
 
-#### Goal Progress
-Just take your secured customer count, divide by 10 (your goal), multiply by 100.
+**Pricing call = 75-80%**
+- Very close to closing, discussing money means they're serious
+- High likelihood of conversion
+- Color: Yellow-green or lime
 
-**Example**: If you have 3 customers, that's 30% progress to your goal.
+**Secured = 100%**
+- Done deal, paying customer
+- Color: Bright green
 
-#### Stage-by-Stage Conversion
-This is more advanced - it tracks how well leads move from one stage to the next:
-- For example, "Set up call" to "Discovery call"
-- Count how many leads made it TO "Set up call" stage or beyond
-- Count how many made it TO "Discovery call" or beyond
-- Divide the second number by the first, multiply by 100
-- This shows your conversion rate between stages
+**Did not close = 0%**
+- Lost the deal
+- Color: Red or gray
 
-#### Relationship Impact on Conversion
-This analyzes which relationship types convert best:
-- For each relationship type, filter just those leads
-- See how many of them are "Secured"
-- Divide secured by total for that relationship type
-- Multiply by 100
+### 🎯 How to Use Both Together
 
-**Example**: "Leads I know well convert at 60%, but cold leads convert at only 15%"
+The **relationship tag** tells you the baseline probability based on how well you know them.
 
-#### Performance Color Coding
-Based on any percentage:
-- **70% or higher** = Green (excellent)
-- **40-69%** = Yellow (good)
-- **20-39%** = Orange (needs work)
-- **Below 20%** = Red (critical)
+The **stage tag** tells you how far along they are in the buying process.
 
----
+You could even combine them: If someone is "Know them well" (70%) AND at "Demo" stage (60%), that's a very strong lead with high conversion likelihood. But if they're "Don't know them" (20%) and only at "Set up call" (20%), that's much riskier.
 
-## 🎮 Game Mechanics
-
-### Pineapple Economy 🍍
-- **+10 🍍**: Complete daily evidence upload
-- **+2 🍍**: Maintain your streak (daily bonus)
-- **-15 🍍**: Reveal one customer profile in Find Customers
-
-### Streak System 🔥
-- Upload evidence daily to maintain your streak
-- Miss a day and your streak resets to 0
-- 10-day streak unlocks Find Customers feature
-- Streak counter prominently displayed in sidebar
-
-### Unlock Progression
-1. **Days 1-9**: Build habits with daily uploads, earn pineapples
-2. **Day 10**: Unlock Find Customers feature
-3. **Day 10+**: Use pineapples to discover and convert leads
-4. **Goal**: Secure 10 paying customers within 100 days
+The colors help you visually scan and see which leads are "hot" (green/yellow) versus "cold" (red/gray).
 
 ---
 
