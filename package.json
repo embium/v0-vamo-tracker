@@ -16,8 +16,7 @@
     "@assistant-ui/tap": "0.3.1",
     "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^5.2.2",
-    "@prisma/adapter-better-sqlite3": "^7.1.0",
-    "@prisma/adapter-libsql": "^7.1.0",
+    "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -50,7 +49,6 @@
     "ai": "^5.0.108",
     "autoprefixer": "^10.4.22",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^12.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.1.1",
@@ -62,7 +60,7 @@
     "next": "15.0.0",
     "next-auth": "5.0.0-beta.25",
     "next-themes": "^0.4.6",
-    "nodemailer": "^7.0.11",
+    "nodemailer": "^7.0.7",
     "ollama-ai-provider-v2": "^1.5.5",
     "react": "18.2.0",
     "react-day-picker": "9.12.0",
@@ -81,7 +79,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24",
     "@types/nodemailer": "^7.0.4",
     "@types/pg": "^8.15.6",
@@ -97,7 +94,8 @@
   },
   "pnpm": {
     "overrides": {
-      "@assistant-ui/tap": "0.3.1"
+      "@assistant-ui/tap": "0.3.1",
+      "nodemailer": "7.0.7"
     }
   }
 }
