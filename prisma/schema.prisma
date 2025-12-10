@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  name               String?
+  email              String              @unique
+  password           String?
+  emailVerified      DateTime?           @map("email_verified")
+  image              String?
+  accounts           Account[]
+  sessions           Session[]
+  evidence           Evidence[]
+  leads              Lead[]
+  potentialCustomers PotentialCustomer[]
+  challenge          Challenge?
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Evidence model matches Zustand interface exactly
+model Evidence {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String   // "text" | "image" | "link" | "screenshot" | "note"
+  content   String
+  date      String   // ISO string
+  timestamp BigInt   // Unix timestamp
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, timestamp])
+  @@map("evidence")
+}
+
+// Lead model matches Zustand interface exactly
+model Lead {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  name         String
+  relationship String   // "know-well" | "talked-once" | "dont-know"
+  reason       String
+  stage        String   // "setup-call" | "discovery" | "demo" | "pricing" | "secured" | "did-not-close"
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, stage])
+  @@map("leads")
+}
+
+// Potential customer pool for discovery feature
+model PotentialCustomer {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  name       String
+  background String
+  reason     String
+  revealed   Boolean  @default(false)
+  addedToLeads Boolean @default(false) @map("added_to_leads")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, revealed])
+  @@map("potential_customers")
+}
+
+// Challenge state - one per user
+model Challenge {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique @map("user_id")
+  startDate               BigInt   @map("start_date") // Unix timestamp
+  streak                  Int      @default(0)
+  lastCommitDate          String?  @map("last_commit_date") // Date string for comparison
+  pineapples              Int      @default(0)
+  redditPageUnlocked      Boolean  @default(false) @map("reddit_page_unlocked")
+  findCustomersUnlocked   Boolean  @default(false) @map("find_customers_unlocked")
+  dailyTaskCompleted      Boolean  @default(false) @map("daily_task_completed")
+  hasSeenOnboarding       Boolean  @default(false) @map("has_seen_onboarding")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("challenges")
+}
+
+

@@ -34,9 +34,10 @@ const stageLabels = {
 }
 
 export default function LeadsPage() {
-  const { leads, addLead, updateLead } = useAppStore()
+  const { leads, addLead, updateLead, loading } = useAppStore()
   const [isAddingLead, setIsAddingLead] = useState(false)
   const [editingLead, setEditingLead] = useState<Lead | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     relationship: "know-well" as Lead["relationship"],
@@ -102,23 +103,31 @@ export default function LeadsPage() {
     }
   }, [leads])
 
-  const handleSaveLead = () => {
+  const handleSaveLead = async () => {
     if (!formData.name.trim()) return
 
-    if (editingLead) {
-      updateLead(editingLead.id, formData)
-    } else {
-      addLead(formData)
-    }
+    setIsSaving(true)
 
-    setFormData({
-      name: "",
-      relationship: "know-well",
-      reason: "",
-      stage: "setup-call",
-    })
-    setEditingLead(null)
-    setIsAddingLead(false)
+    try {
+      if (editingLead) {
+        await updateLead(editingLead.id, formData)
+      } else {
+        await addLead(formData)
+      }
+
+      setFormData({
+        name: "",
+        relationship: "know-well",
+        reason: "",
+        stage: "setup-call",
+      })
+      setEditingLead(null)
+      setIsAddingLead(false)
+    } catch (error) {
+      console.error("Failed to save lead:", error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleOpenAddDialog = () => {
@@ -289,8 +298,8 @@ export default function LeadsPage() {
                   </Select>
                 </div>
 
-                <Button onClick={handleSaveLead} className="w-full" disabled={!formData.name.trim()}>
-                  {editingLead ? "Save Changes" : "Add Lead"}
+                <Button onClick={handleSaveLead} className="w-full" disabled={!formData.name.trim() || isSaving || loading}>
+                  {isSaving ? "Saving..." : editingLead ? "Save Changes" : "Add Lead"}
                 </Button>
               </div>
             </DialogContent>

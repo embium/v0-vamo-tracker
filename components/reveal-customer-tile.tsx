@@ -12,29 +12,53 @@ interface RevealCustomerTileProps {
 }
 
 export function RevealCustomerTile({ customer }: RevealCustomerTileProps) {
-  const { pineapples, revealCustomer, addCustomerToLeads } = useAppStore()
+  const { pineapples, revealCustomer, addCustomerToLeads, loading } = useAppStore()
   const { toast } = useToast()
   const [showReward, setShowReward] = useState(false)
+  const [isRevealing, setIsRevealing] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
   const REVEAL_COST = 15
 
-  const handleReveal = () => {
-    const success = revealCustomer(customer.id)
-    if (success) {
-      setShowReward(true)
-      setTimeout(() => setShowReward(false), 2000)
+  const handleReveal = async () => {
+    setIsRevealing(true)
+    try {
+      const success = await revealCustomer(customer.id)
+      if (success) {
+        setShowReward(true)
+        setTimeout(() => setShowReward(false), 2000)
+        toast({
+          title: "Customer Revealed!",
+          description: `You discovered ${customer.name} as a potential lead.`,
+        })
+      }
+    } catch (error) {
       toast({
-        title: "Customer Revealed!",
-        description: `You discovered ${customer.name} as a potential lead.`,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to reveal customer",
+        variant: "destructive",
       })
+    } finally {
+      setIsRevealing(false)
     }
   }
 
-  const handleAddToLeads = () => {
-    addCustomerToLeads(customer.id)
-    toast({
-      title: "Added to Leads",
-      description: `${customer.name} has been added to your Leads CRM.`,
-    })
+  const handleAddToLeads = async () => {
+    setIsAdding(true)
+    try {
+      await addCustomerToLeads(customer.id)
+      toast({
+        title: "Added to Leads",
+        description: `${customer.name} has been added to your Leads CRM.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add to leads",
+        variant: "destructive",
+      })
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   if (!customer.revealed) {
@@ -53,10 +77,10 @@ export function RevealCustomerTile({ customer }: RevealCustomerTileProps) {
 
           <Button
             onClick={handleReveal}
-            disabled={pineapples < REVEAL_COST}
+            disabled={pineapples < REVEAL_COST || isRevealing || loading}
             className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
           >
-            Reveal for {REVEAL_COST} 🍍
+            {isRevealing ? "Revealing..." : `Reveal for ${REVEAL_COST} 🍍`}
           </Button>
 
           {pineapples < REVEAL_COST && (
@@ -67,8 +91,14 @@ export function RevealCustomerTile({ customer }: RevealCustomerTileProps) {
     )
   }
 
+  const isAddedToLeads = customer.addedToLeads || false
+
   return (
-    <Card className="relative overflow-hidden border-2 border-emerald-300 dark:border-emerald-700 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
+    <Card className={`relative overflow-hidden border-2 ${
+      isAddedToLeads
+        ? "border-gray-300 dark:border-gray-700 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/30 dark:to-gray-800/30"
+        : "border-emerald-300 dark:border-emerald-700 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30"
+    }`}>
       {showReward && (
         <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-amber-400/20 animate-pulse pointer-events-none flex items-center justify-center">
           <Sparkles className="h-12 w-12 text-yellow-500" />
@@ -77,7 +107,11 @@ export function RevealCustomerTile({ customer }: RevealCustomerTileProps) {
 
       <CardContent className="p-6 space-y-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 ${
+            isAddedToLeads
+              ? "bg-gradient-to-br from-gray-400 to-gray-500"
+              : "bg-gradient-to-br from-emerald-500 to-teal-500"
+          }`}>
             {customer.name.charAt(0)}
           </div>
 
@@ -92,9 +126,17 @@ export function RevealCustomerTile({ customer }: RevealCustomerTileProps) {
           <p className="text-sm text-foreground">{customer.reason}</p>
         </div>
 
-        <Button onClick={handleAddToLeads} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600">
+        <Button 
+          onClick={handleAddToLeads} 
+          className={`w-full ${
+            isAddedToLeads
+              ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed opacity-60"
+              : "bg-gradient-to-r from-emerald-600 to-teal-600"
+          }`}
+          disabled={isAddedToLeads || isAdding || loading}
+        >
           <UserPlus className="h-4 w-4 mr-2" />
-          Add to Leads Page
+          {isAddedToLeads ? "Already Added ✓" : isAdding ? "Adding..." : "Add to Leads Page"}
         </Button>
       </CardContent>
     </Card>

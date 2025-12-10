@@ -1,265 +1,424 @@
-"use client"
+'use client';
 
-import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { create } from 'zustand';
+import { getEvidenceAction, addEvidenceAction } from '@/app/actions/evidence';
+import {
+  getLeadsAction,
+  addLeadAction,
+  updateLeadAction,
+} from '@/app/actions/leads';
+import {
+  getPotentialCustomersAction,
+  revealCustomerAction,
+  addCustomerToLeadsAction,
+} from '@/app/actions/customers';
+import {
+  getChallengeAction,
+  startChallengeAction,
+  checkStreakAction,
+  completeOnboardingAction,
+  reopenOnboardingAction,
+} from '@/app/actions/challenge';
 
 export interface Evidence {
-  id: string
-  type: "text" | "image" | "link" | "screenshot" | "note"
-  content: string
-  date: string
-  timestamp: number
+  id: string;
+  type: 'text' | 'image' | 'link' | 'screenshot' | 'note';
+  content: string;
+  date: string;
+  timestamp: number;
 }
 
 export interface Lead {
-  id: string
-  name: string
-  relationship: "know-well" | "talked-once" | "dont-know"
-  reason: string
-  stage: "setup-call" | "discovery" | "demo" | "pricing" | "secured" | "did-not-close"
+  id: string;
+  name: string;
+  relationship: 'know-well' | 'talked-once' | 'dont-know';
+  reason: string;
+  stage:
+    | 'setup-call'
+    | 'discovery'
+    | 'demo'
+    | 'pricing'
+    | 'secured'
+    | 'did-not-close';
 }
 
 export interface PotentialCustomer {
-  id: string
-  name: string
-  background: string
-  reason: string
-  revealed: boolean
+  id: string;
+  name: string;
+  background: string;
+  reason: string;
+  revealed: boolean;
+  addedToLeads?: boolean;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
 }
 
 interface AppState {
+  // User Profile
+  userProfile: UserProfile | null;
+
   // Challenge data
-  startDate: number | null
-  streak: number
-  lastCommitDate: string | null
-  pineapples: number
+  startDate: number | null;
+  streak: number;
+  lastCommitDate: string | null;
+  pineapples: number;
 
   // Evidence
-  evidence: Evidence[]
+  evidence: Evidence[];
 
   // Leads
-  leads: Lead[]
+  leads: Lead[];
 
-  potentialCustomers: PotentialCustomer[]
+  potentialCustomers: PotentialCustomer[];
 
   // Unlocks
-  redditPageUnlocked: boolean
-  findCustomersUnlocked: boolean
-  dailyTaskCompleted: boolean
-  hasSeenOnboarding: boolean
+  redditPageUnlocked: boolean;
+  findCustomersUnlocked: boolean;
+  dailyTaskCompleted: boolean;
+  hasSeenOnboarding: boolean;
+
+  // Loading & Error states
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;
 
   // Actions
-  startChallenge: () => void
-  addEvidence: (evidence: Omit<Evidence, "id" | "timestamp">) => void
-  addLead: (lead: Omit<Lead, "id">) => void
-  updateLead: (id: string, updates: Partial<Lead>) => void
-  unlockRedditPage: () => void
-  checkAndUpdateStreak: () => void
-  revealCustomer: (id: string) => boolean
-  addCustomerToLeads: (customerId: string) => void
-  completeOnboarding: () => void
-  checkDailyTask: () => void
-  reopenOnboarding: () => void
+  initialize: () => Promise<void>;
+  startChallenge: () => Promise<void>;
+  addEvidence: (evidence: Omit<Evidence, 'id' | 'timestamp'>) => Promise<void>;
+  addLead: (lead: Omit<Lead, 'id'>) => Promise<void>;
+  updateLead: (id: string, updates: Partial<Lead>) => Promise<void>;
+  unlockRedditPage: () => void;
+  checkAndUpdateStreak: () => Promise<void>;
+  revealCustomer: (id: string) => Promise<boolean>;
+  addCustomerToLeads: (customerId: string) => Promise<void>;
+  completeOnboarding: () => Promise<void>;
+  checkDailyTask: () => void;
+  reopenOnboarding: () => Promise<void>;
+  refreshData: () => Promise<void>;
+  fetchUserProfile: () => Promise<void>;
+  updateUserProfile: (data: { name?: string; image?: string }) => Promise<void>;
 }
 
-const MOCK_CUSTOMERS: Omit<PotentialCustomer, "revealed">[] = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    background: "Product Manager at TechCorp",
-    reason: "Has expressed interest in productivity tools and manages a team of 15",
+export const useAppStore = create<AppState>()((set, get) => ({
+  userProfile: null,
+  startDate: null,
+  streak: 0,
+  lastCommitDate: null,
+  pineapples: 0,
+  evidence: [],
+  leads: [],
+  potentialCustomers: [],
+  redditPageUnlocked: false,
+  findCustomersUnlocked: false,
+  dailyTaskCompleted: false,
+  hasSeenOnboarding: false,
+  loading: false,
+  error: null,
+  initialized: false,
+
+  initialize: async () => {
+    const state = get();
+    // Guard against double initialization or concurrent calls
+    if (state.initialized || state.loading) return;
+
+    set({ loading: true, error: null });
+    try {
+      const [challenge, evidence, leads, customers] = await Promise.all([
+        getChallengeAction(),
+        getEvidenceAction(),
+        getLeadsAction(),
+        getPotentialCustomersAction(),
+      ]);
+
+      set({
+        startDate: challenge.startDate,
+        streak: challenge.streak,
+        lastCommitDate: challenge.lastCommitDate,
+        pineapples: challenge.pineapples,
+        redditPageUnlocked: challenge.redditPageUnlocked,
+        findCustomersUnlocked: challenge.findCustomersUnlocked,
+        dailyTaskCompleted: challenge.dailyTaskCompleted,
+        hasSeenOnboarding: challenge.hasSeenOnboarding,
+        evidence: evidence as Evidence[],
+        leads: leads as Lead[],
+        potentialCustomers: customers as PotentialCustomer[],
+        loading: false,
+        initialized: true,
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to load data',
+        loading: false,
+      });
+    }
   },
-  {
-    id: "2",
-    name: "Marcus Johnson",
-    background: "Founder of StartupXYZ",
-    reason: "Recently tweeted about needing better customer tracking solutions",
+
+  refreshData: async () => {
+    set({ loading: true, error: null });
+    try {
+      const [challenge, evidence, leads, customers] = await Promise.all([
+        getChallengeAction(),
+        getEvidenceAction(),
+        getLeadsAction(),
+        getPotentialCustomersAction(),
+      ]);
+
+      set({
+        startDate: challenge.startDate,
+        streak: challenge.streak,
+        lastCommitDate: challenge.lastCommitDate,
+        pineapples: challenge.pineapples,
+        redditPageUnlocked: challenge.redditPageUnlocked,
+        findCustomersUnlocked: challenge.findCustomersUnlocked,
+        dailyTaskCompleted: challenge.dailyTaskCompleted,
+        hasSeenOnboarding: challenge.hasSeenOnboarding,
+        evidence: evidence as Evidence[],
+        leads: leads as Lead[],
+        potentialCustomers: customers as PotentialCustomer[],
+        loading: false,
+      });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to refresh data',
+        loading: false,
+      });
+    }
   },
-  {
-    id: "3",
-    name: "Elena Rodriguez",
-    background: "Head of Sales at GrowthCo",
-    reason: "Attended your webinar and asked follow-up questions",
+
+  startChallenge: async () => {
+    set({ loading: true, error: null });
+    try {
+      const challenge = await startChallengeAction();
+
+      set({
+        startDate: challenge.startDate,
+        streak: 0,
+        lastCommitDate: null,
+        pineapples: 0,
+        evidence: [],
+        leads: [],
+        loading: false,
+      });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to start challenge',
+        loading: false,
+      });
+    }
   },
-  {
-    id: "4",
-    name: "David Park",
-    background: "Engineering Manager",
-    reason: "Mentioned pain points that align with your product in a LinkedIn post",
+
+  addEvidence: async (evidence) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await addEvidenceAction(evidence);
+
+      set((state) => ({
+        evidence: [result.evidence as Evidence, ...state.evidence],
+        lastCommitDate: new Date().toDateString(),
+        streak: result.newStreak,
+        pineapples: result.newPineappleBalance,
+        dailyTaskCompleted: true,
+        findCustomersUnlocked:
+          result.newStreak >= 10 ? true : state.findCustomersUnlocked,
+        loading: false,
+      }));
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to add evidence',
+        loading: false,
+      });
+      throw error;
+    }
   },
-  {
-    id: "5",
-    name: "Priya Sharma",
-    background: "CEO of DesignStudio",
-    reason: "Your mutual connection recommended you reach out",
+
+  addLead: async (lead) => {
+    set({ loading: true, error: null });
+    try {
+      const newLead = await addLeadAction(lead);
+
+      set((state) => ({
+        leads: [...state.leads, newLead as Lead],
+        loading: false,
+      }));
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to add lead',
+        loading: false,
+      });
+      throw error;
+    }
   },
-  {
-    id: "6",
-    name: "Alex Thompson",
-    background: "Director of Operations",
-    reason: "Downloaded your lead magnet and engaged with 3+ emails",
+
+  updateLead: async (id, updates) => {
+    set({ loading: true, error: null });
+    try {
+      const updatedLead = await updateLeadAction(id, updates);
+
+      set((state) => ({
+        leads: state.leads.map((lead) =>
+          lead.id === id ? (updatedLead as Lead) : lead
+        ),
+        loading: false,
+      }));
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to update lead',
+        loading: false,
+      });
+      throw error;
+    }
   },
-  {
-    id: "7",
-    name: "Lisa Wang",
-    background: "VP of Marketing",
-    reason: "Fits your ICP perfectly and has budget authority",
+
+  unlockRedditPage: () => {
+    const state = get();
+    if (state.pineapples >= 30) {
+      set({
+        pineapples: state.pineapples - 30,
+        redditPageUnlocked: true,
+      });
+    }
   },
-  {
-    id: "8",
-    name: "James Miller",
-    background: "Small Business Owner",
-    reason: "Posted in a Facebook group asking for solutions like yours",
+
+  checkAndUpdateStreak: async () => {
+    try {
+      await checkStreakAction();
+      await get().refreshData();
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to check streak',
+      });
+    }
   },
-]
 
-export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      startDate: Date.now(),
-      streak: 0,
-      lastCommitDate: null,
-      pineapples: 0,
-      evidence: [],
-      leads: [],
-      potentialCustomers: MOCK_CUSTOMERS.map((c) => ({ ...c, revealed: false })),
-      redditPageUnlocked: false,
-      findCustomersUnlocked: false,
-      dailyTaskCompleted: false,
-      hasSeenOnboarding: false,
+  revealCustomer: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await revealCustomerAction(id);
 
-      startChallenge: () => {
-        set({
-          startDate: Date.now(),
-          streak: 0,
-          lastCommitDate: null,
-          pineapples: 0,
-          evidence: [],
-          leads: [],
-          potentialCustomers: MOCK_CUSTOMERS.map((c) => ({ ...c, revealed: false })),
-        })
-      },
+      set((state) => ({
+        pineapples: result.newPineappleBalance,
+        potentialCustomers: state.potentialCustomers.map((customer) =>
+          customer.id === id ? { ...customer, revealed: true } : customer
+        ),
+        loading: false,
+      }));
 
-      addEvidence: (evidence) => {
-        const today = new Date().toDateString()
-        const state = get()
+      return true;
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to reveal customer',
+        loading: false,
+      });
+      return false;
+    }
+  },
 
-        // Check if already committed today
-        const alreadyCommittedToday = state.lastCommitDate === today
+  addCustomerToLeads: async (customerId) => {
+    set({ loading: true, error: null });
+    try {
+      const newLead = await addCustomerToLeadsAction(customerId);
 
-        const newEvidence: Evidence = {
-          ...evidence,
-          id: Date.now().toString(),
-          timestamp: Date.now(),
-        }
+      set((state) => ({
+        leads: [...state.leads, newLead as Lead],
+        // IMPORTANT: Also update the customer in potentialCustomers to mark as added
+        potentialCustomers: state.potentialCustomers.map((customer) =>
+          customer.id === customerId
+            ? { ...customer, addedToLeads: true }
+            : customer
+        ),
+        loading: false,
+      }));
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to add customer to leads',
+        loading: false,
+      });
+      throw error;
+    }
+  },
 
-        const pineappleReward = alreadyCommittedToday ? 2 : 12 // 10 for daily task + 2 for streak
-        const newStreak = alreadyCommittedToday ? state.streak : state.streak + 1
+  completeOnboarding: async () => {
+    try {
+      await completeOnboardingAction();
+      set({ hasSeenOnboarding: true });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to complete onboarding',
+      });
+    }
+  },
 
-        set((state) => ({
-          evidence: [newEvidence, ...state.evidence],
-          lastCommitDate: today,
-          streak: newStreak,
-          pineapples: state.pineapples + pineappleReward,
-          dailyTaskCompleted: true,
-          findCustomersUnlocked: newStreak >= 10 ? true : state.findCustomersUnlocked,
-        }))
-      },
+  checkDailyTask: () => {
+    const state = get();
+    const today = new Date().toDateString();
 
-      addLead: (lead) => {
-        const newLead: Lead = {
-          ...lead,
-          id: Date.now().toString(),
-        }
-        set((state) => ({
-          leads: [...state.leads, newLead],
-        }))
-      },
+    if (state.lastCommitDate !== today) {
+      set({ dailyTaskCompleted: false });
+    }
+  },
 
-      updateLead: (id, updates) => {
-        set((state) => ({
-          leads: state.leads.map((lead) => (lead.id === id ? { ...lead, ...updates } : lead)),
-        }))
-      },
+  reopenOnboarding: async () => {
+    try {
+      await reopenOnboardingAction();
+      set({ hasSeenOnboarding: false });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to reopen onboarding',
+      });
+    }
+  },
 
-      unlockRedditPage: () => {
-        const state = get()
-        if (state.pineapples >= 30) {
-          set({
-            pineapples: state.pineapples - 30,
-            redditPageUnlocked: true,
-          })
-        }
-      },
+  fetchUserProfile: async () => {
+    try {
+      const response = await fetch('/api/user');
+      if (response.ok) {
+        const data = await response.json();
+        set({ userProfile: data as UserProfile });
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  },
 
-      checkAndUpdateStreak: () => {
-        const state = get()
-        const today = new Date().toDateString()
-        const yesterday = new Date(Date.now() - 86400000).toDateString()
+  updateUserProfile: async (data: { name?: string; image?: string }) => {
+    try {
+      const response = await fetch('/api/user/update', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-        if (state.lastCommitDate !== today && state.lastCommitDate !== yesterday) {
-          // Streak broken
-          set({ streak: 0 })
-        }
-
-        if (state.lastCommitDate !== today) {
-          set({ dailyTaskCompleted: false })
-        }
-      },
-
-      revealCustomer: (id) => {
-        const state = get()
-        const REVEAL_COST = 15
-
-        if (state.pineapples >= REVEAL_COST) {
-          set((state) => ({
-            pineapples: state.pineapples - REVEAL_COST,
-            potentialCustomers: state.potentialCustomers.map((customer) =>
-              customer.id === id ? { ...customer, revealed: true } : customer,
-            ),
-          }))
-          return true
-        }
-        return false
-      },
-
-      addCustomerToLeads: (customerId) => {
-        const state = get()
-        const customer = state.potentialCustomers.find((c) => c.id === customerId)
-
-        if (customer && customer.revealed) {
-          const newLead: Lead = {
-            id: Date.now().toString(),
-            name: customer.name,
-            relationship: "dont-know",
-            reason: customer.reason,
-            stage: "setup-call",
-          }
-          set((state) => ({
-            leads: [...state.leads, newLead],
-          }))
-        }
-      },
-
-      completeOnboarding: () => {
-        set({ hasSeenOnboarding: true })
-      },
-
-      checkDailyTask: () => {
-        const state = get()
-        const today = new Date().toDateString()
-
-        if (state.lastCommitDate !== today) {
-          set({ dailyTaskCompleted: false })
-        }
-      },
-
-      reopenOnboarding: () => {
-        set({ hasSeenOnboarding: false })
-      },
-    }),
-    {
-      name: "vamo-storage",
-    },
-  ),
-)
+      if (response.ok) {
+        const updatedUser = await response.json();
+        set({ userProfile: updatedUser as UserProfile });
+      } else {
+        throw new Error('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+  },
+}));

@@ -45,18 +45,19 @@ const ONBOARDING_SCREENS = [
 ]
 
 export function OnboardingModal() {
-  const { hasSeenOnboarding, completeOnboarding } = useAppStore()
+  const { hasSeenOnboarding, completeOnboarding, initialized } = useAppStore()
   const [currentScreen, setCurrentScreen] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
-    if (!hasSeenOnboarding) {
+    // Only show onboarding after store has initialized from database
+    if (initialized && !hasSeenOnboarding) {
       setCurrentScreen(0)
       setIsOpen(true)
-    } else {
+    } else if (initialized && hasSeenOnboarding) {
       setIsOpen(false)
     }
-  }, [hasSeenOnboarding])
+  }, [hasSeenOnboarding, initialized])
 
   const handleNext = () => {
     if (currentScreen < ONBOARDING_SCREENS.length - 1) {
@@ -68,6 +69,11 @@ export function OnboardingModal() {
 
   const currentContent = ONBOARDING_SCREENS[currentScreen]
   const Icon = currentContent.icon
+
+  // Don't render anything until store is initialized
+  if (!initialized) {
+    return null
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>

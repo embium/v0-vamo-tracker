@@ -21,7 +21,7 @@ export function UnlockCustomersCard() {
           ? "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50 border-blue-300 dark:border-blue-700 hover:shadow-lg cursor-pointer"
           : "bg-muted/50 opacity-75"
       }`}
-      onClick={() => findCustomersUnlocked && router.push("/find-customers")}
+      onClick={() => findCustomersUnlocked && router.push("/dashboard/find-customers")}
     >
       <CardHeader>
         <div className="flex items-start justify-between">
