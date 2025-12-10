@@ -160,7 +160,7 @@ export default function DiaryPage() {
                 </div>
               </div>
 
-              {selectedType === 'image' ? (
+              {selectedType === 'image' || selectedType === 'screenshot' ? (
                 <div className="space-y-3">
                   <Label htmlFor="image">Upload Image</Label>
                   <div className="relative">
