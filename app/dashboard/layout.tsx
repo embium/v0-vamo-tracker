@@ -39,7 +39,7 @@ export default async function DashboardLayout({
   return (
     <DataInitializer>
       <SidebarNav />
-      <main className="ml-64">{children}</main>
+      <main className="lg:ml-64">{children}</main>
       <Toaster />
       <HelpButton />
       <Analytics />

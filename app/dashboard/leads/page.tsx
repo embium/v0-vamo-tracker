@@ -213,7 +213,7 @@ export default function LeadsPage() {
         </div>
 
         {leads.length > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <Card className="text-center">
               <CardHeader className="pb-3">
                 <CardDescription className="text-xs">Win Rate</CardDescription>
@@ -412,99 +412,186 @@ export default function LeadsPage() {
             </p>
           </Card>
         ) : (
-          <div className="bg-card border border-border rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
-              <div className="col-span-2">Name</div>
-              <div className="col-span-2">Relationship</div>
-              <div className="col-span-4">Reason</div>
-              <div className="col-span-3">Stage</div>
-              <div className="col-span-1 text-right">Conv %</div>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
+                <div className="col-span-2">Name</div>
+                <div className="col-span-2">Relationship</div>
+                <div className="col-span-4">Reason</div>
+                <div className="col-span-3">Stage</div>
+                <div className="col-span-1 text-right">Conv %</div>
+              </div>
+
+              <div className="divide-y">
+                {leads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    onClick={() => handleEditLead(lead)}
+                    className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-colors hover:bg-muted/30 cursor-pointer ${
+                      lead.stage === 'secured'
+                        ? 'bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30'
+                        : ''
+                    }`}
+                  >
+                    <div className="col-span-2">
+                      <div className="font-semibold flex items-center gap-2">
+                        {lead.name}
+                        {lead.stage === 'secured' && (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="col-span-2">
+                      <span className="text-sm text-muted-foreground">
+                        {relationshipLabels[lead.relationship]}
+                      </span>
+                    </div>
+
+                    <div className="col-span-4">
+                      <p className="text-sm text-foreground line-clamp-2">
+                        {lead.reason}
+                      </p>
+                    </div>
+
+                    <div
+                      className="col-span-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Select
+                        value={lead.stage}
+                        onValueChange={(value) =>
+                          updateLead(lead.id, { stage: value as Lead['stage'] })
+                        }
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="setup-call">
+                            Set up call
+                          </SelectItem>
+                          <SelectItem value="discovery">
+                            Discovery call
+                          </SelectItem>
+                          <SelectItem value="demo">Demo</SelectItem>
+                          <SelectItem value="pricing">Pricing call</SelectItem>
+                          <SelectItem value="secured">Secured ✅</SelectItem>
+                          <SelectItem value="did-not-close">
+                            Did not close
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="col-span-1 text-right">
+                      <span
+                        className={`text-sm font-semibold ${
+                          statistics.relationshipConversion[
+                            lead.relationship
+                          ] >= 70
+                            ? 'text-emerald-600'
+                            : statistics.relationshipConversion[
+                                lead.relationship
+                              ] >= 40
+                            ? 'text-yellow-600'
+                            : statistics.relationshipConversion[
+                                lead.relationship
+                              ] >= 20
+                            ? 'text-orange-600'
+                            : 'text-red-600'
+                        }`}
+                      >
+                        {statistics.relationshipConversion[lead.relationship]}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="divide-y">
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
               {leads.map((lead) => (
-                <div
+                <Card
                   key={lead.id}
                   onClick={() => handleEditLead(lead)}
-                  className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-colors hover:bg-muted/30 cursor-pointer ${
+                  className={`cursor-pointer transition-all hover:shadow-lg ${
                     lead.stage === 'secured'
-                      ? 'bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30'
+                      ? 'border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30'
                       : ''
                   }`}
                 >
-                  <div className="col-span-2">
-                    <div className="font-semibold flex items-center gap-2">
-                      {lead.name}
-                      {lead.stage === 'secured' && (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      )}
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        {lead.name}
+                        {lead.stage === 'secured' && (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                        )}
+                      </CardTitle>
+                      <span
+                        className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                          statistics.relationshipConversion[
+                            lead.relationship
+                          ] >= 70
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                            : statistics.relationshipConversion[
+                                lead.relationship
+                              ] >= 40
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                        }`}
+                      >
+                        {statistics.relationshipConversion[lead.relationship]}%
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="col-span-2">
-                    <span className="text-sm text-muted-foreground">
+                    <CardDescription>
                       {relationshipLabels[lead.relationship]}
-                    </span>
-                  </div>
-
-                  <div className="col-span-4">
-                    <p className="text-sm text-foreground line-clamp-2">
-                      {lead.reason}
-                    </p>
-                  </div>
-
-                  <div
-                    className="col-span-3"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Select
-                      value={lead.stage}
-                      onValueChange={(value) =>
-                        updateLead(lead.id, { stage: value as Lead['stage'] })
-                      }
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="setup-call">Set up call</SelectItem>
-                        <SelectItem value="discovery">
-                          Discovery call
-                        </SelectItem>
-                        <SelectItem value="demo">Demo</SelectItem>
-                        <SelectItem value="pricing">Pricing call</SelectItem>
-                        <SelectItem value="secured">Secured ✅</SelectItem>
-                        <SelectItem value="did-not-close">
-                          Did not close
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="col-span-1 text-right">
-                    <span
-                      className={`text-sm font-semibold ${
-                        statistics.relationshipConversion[lead.relationship] >=
-                        70
-                          ? 'text-emerald-600'
-                          : statistics.relationshipConversion[
-                              lead.relationship
-                            ] >= 40
-                          ? 'text-yellow-600'
-                          : statistics.relationshipConversion[
-                              lead.relationship
-                            ] >= 20
-                          ? 'text-orange-600'
-                          : 'text-red-600'
-                      }`}
-                    >
-                      {statistics.relationshipConversion[lead.relationship]}%
-                    </span>
-                  </div>
-                </div>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">
+                        Reason
+                      </p>
+                      <p className="text-sm">{lead.reason}</p>
+                    </div>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                        Stage
+                      </p>
+                      <Select
+                        value={lead.stage}
+                        onValueChange={(value) =>
+                          updateLead(lead.id, { stage: value as Lead['stage'] })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="setup-call">
+                            Set up call
+                          </SelectItem>
+                          <SelectItem value="discovery">
+                            Discovery call
+                          </SelectItem>
+                          <SelectItem value="demo">Demo</SelectItem>
+                          <SelectItem value="pricing">Pricing call</SelectItem>
+                          <SelectItem value="secured">Secured ✅</SelectItem>
+                          <SelectItem value="did-not-close">
+                            Did not close
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
