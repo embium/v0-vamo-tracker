@@ -5,20 +5,45 @@ import { createEvidence, getEvidence } from '@/lib/db/evidence';
 import { getOrCreateChallenge, updateChallenge } from '@/lib/db/challenge';
 import { revalidatePath } from 'next/cache';
 import type { Evidence } from '@/lib/generated/prisma/client';
+import { z } from 'zod';
+
+// Zod schema for evidence validation
+const evidenceTypeSchema = z.enum([
+  'text',
+  'image',
+  'link',
+  'screenshot',
+  'note',
+]);
+const evidenceDataSchema = z.object({
+  type: evidenceTypeSchema,
+  content: z
+    .string()
+    .min(1, 'Content is required')
+    .max(10000, 'Content must be less than 10,000 characters'),
+  date: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: 'Invalid date format',
+  }),
+});
 
 export async function getEvidenceAction() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error('Unauthorized');
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized');
+    }
+
+    const evidence = await getEvidence(session.user.id);
+
+    // Convert BigInt to number for client serialization
+    return evidence.map((e: Evidence) => ({
+      ...e,
+      timestamp: Number(e.timestamp),
+    }));
+  } catch (error) {
+    console.error('Error getting evidence:', error);
+    throw error;
   }
-
-  const evidence = await getEvidence(session.user.id);
-
-  // Convert BigInt to number for client serialization
-  return evidence.map((e: Evidence) => ({
-    ...e,
-    timestamp: Number(e.timestamp),
-  }));
 }
 
 export async function addEvidenceAction(data: {
@@ -26,48 +51,62 @@ export async function addEvidenceAction(data: {
   content: string;
   date: string;
 }) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error('Unauthorized');
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized');
+    }
+
+    // Validate input with Zod
+    const validatedData = evidenceDataSchema.parse(data);
+
+    const userId = session.user.id;
+    const today = new Date().toDateString();
+
+    // Get current challenge state
+    const challenge = await getOrCreateChallenge(userId);
+    const alreadyCommittedToday = challenge.lastCommitDate === today;
+
+    // Create the evidence
+    const evidence = await createEvidence(userId, validatedData);
+
+    // Calculate rewards
+    const pineappleReward = alreadyCommittedToday ? 2 : 12; // 10 for daily task + 2 for streak
+    const newStreak = alreadyCommittedToday
+      ? challenge.streak
+      : challenge.streak + 1;
+
+    // Update challenge
+    const updatedChallenge = await updateChallenge(userId, {
+      lastCommitDate: today,
+      streak: newStreak,
+      pineapples: challenge.pineapples + pineappleReward,
+      dailyTaskCompleted: true,
+      findCustomersUnlocked:
+        newStreak >= 10 ? true : challenge.findCustomersUnlocked,
+    });
+
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/diary');
+
+    return {
+      evidence: {
+        ...evidence,
+        timestamp: Number(evidence.timestamp),
+      },
+      newPineappleBalance: updatedChallenge.pineapples,
+      newStreak: updatedChallenge.streak,
+      pineappleReward,
+      wasAlreadyCompleted: alreadyCommittedToday,
+    };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errorMessage = error.issues
+        .map((issue: z.ZodIssue) => issue.message)
+        .join(', ');
+      throw new Error(`Validation error: ${errorMessage}`);
+    }
+    console.error('Error adding evidence:', error);
+    throw error;
   }
-
-  const userId = session.user.id;
-  const today = new Date().toDateString();
-
-  // Get current challenge state
-  const challenge = await getOrCreateChallenge(userId);
-  const alreadyCommittedToday = challenge.lastCommitDate === today;
-
-  // Create the evidence
-  const evidence = await createEvidence(userId, data);
-
-  // Calculate rewards
-  const pineappleReward = alreadyCommittedToday ? 2 : 12; // 10 for daily task + 2 for streak
-  const newStreak = alreadyCommittedToday
-    ? challenge.streak
-    : challenge.streak + 1;
-
-  // Update challenge
-  const updatedChallenge = await updateChallenge(userId, {
-    lastCommitDate: today,
-    streak: newStreak,
-    pineapples: challenge.pineapples + pineappleReward,
-    dailyTaskCompleted: true,
-    findCustomersUnlocked:
-      newStreak >= 10 ? true : challenge.findCustomersUnlocked,
-  });
-
-  revalidatePath('/dashboard');
-  revalidatePath('/dashboard/diary');
-
-  return {
-    evidence: {
-      ...evidence,
-      timestamp: Number(evidence.timestamp),
-    },
-    newPineappleBalance: updatedChallenge.pineapples,
-    newStreak: updatedChallenge.streak,
-    pineappleReward,
-    wasAlreadyCompleted: alreadyCommittedToday,
-  };
 }
