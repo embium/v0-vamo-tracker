@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { DiarySkeleton } from '@/components/skeleton-loader';
 
 const evidenceTypes = [
   { type: 'text' as const, label: 'Text Note', icon: FileText },
@@ -34,8 +35,13 @@ const evidenceTypes = [
 ];
 
 export default function DiaryPage() {
-  const { addEvidence, lastCommitDate, dailyTaskCompleted, loading } =
-    useAppStore();
+  const {
+    addEvidence,
+    lastCommitDate,
+    dailyTaskCompleted,
+    loading,
+    initialized,
+  } = useAppStore();
   const { toast } = useToast();
   const [selectedType, setSelectedType] = useState<
     'text' | 'image' | 'link' | 'screenshot' | 'note'
@@ -90,6 +96,11 @@ export default function DiaryPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Show skeleton while data is loading
+  if (!initialized) {
+    return <DiarySkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-b from-background to-secondary/20">

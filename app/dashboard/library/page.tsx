@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { FileText, ImageIcon, LinkIcon, Camera, Lightbulb } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LibrarySkeleton } from '@/components/skeleton-loader';
 
 const iconMap = {
   text: FileText,
@@ -15,8 +16,13 @@ const iconMap = {
 };
 
 export default function LibraryPage() {
-  const { evidence } = useAppStore();
+  const { evidence, initialized } = useAppStore();
   const [filter, setFilter] = useState<string>('all');
+
+  // Show skeleton while data is loading
+  if (!initialized) {
+    return <LibrarySkeleton />;
+  }
 
   const filteredEvidence =
     filter === 'all' ? evidence : evidence.filter((e) => e.type === filter);
