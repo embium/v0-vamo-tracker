@@ -15,16 +15,26 @@ const evidenceTypeSchema = z.enum([
   'screenshot',
   'note',
 ]);
-const evidenceDataSchema = z.object({
-  type: evidenceTypeSchema,
-  content: z
-    .string()
-    .min(1, 'Content is required')
-    .max(10000, 'Content must be less than 10,000 characters'),
-  date: z.string().refine((date) => !isNaN(Date.parse(date)), {
-    message: 'Invalid date format',
-  }),
-});
+const evidenceDataSchema = z
+  .object({
+    type: evidenceTypeSchema,
+    content: z.string().min(1, 'Content is required'),
+    date: z.string().refine((date) => !isNaN(Date.parse(date)), {
+      message: 'Invalid date format',
+    }),
+  })
+  .refine(
+    (data) => {
+      if (data.type === 'image' || data.type === 'screenshot') {
+        return data.content.length <= 15000000; // ~10MB base64
+      }
+      return data.content.length <= 50000;
+    },
+    {
+      message: 'Content too large',
+      path: ['content'],
+    }
+  );
 
 export async function getEvidenceAction() {
   try {
