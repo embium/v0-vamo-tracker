@@ -97,7 +97,8 @@
   "pnpm": {
     "overrides": {
       "@assistant-ui/tap": "0.3.1",
-      "nodemailer": "7.0.7"
+      "nodemailer": "7.0.7",
+      "next": "16.0.8"
     }
   }
 }
