@@ -31,63 +31,63 @@ import {
 import { Plus, Trophy, CheckCircle2 } from 'lucide-react';
 import { LeadsSkeleton } from '@/components/skeleton-loader';
 
-// Relationship warmth metadata with colors and score ranges
+// Relationship multipliers for conversion calculation
 const relationshipData = {
   'know-well': {
     label: 'Know them well',
-    score: 75, // 70-80% range
+    multiplier: 1.2,
     color:
       'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
   },
   'talked-once': {
     label: 'Talked once',
-    score: 45, // 40-50% range
+    multiplier: 1.0,
     color:
       'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700',
   },
   'dont-know': {
     label: "Don't know them",
-    score: 20, // 15-25% range
+    multiplier: 0.8,
     color:
       'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700',
   },
 } as const;
 
-// Stage progress metadata with colors and score values
+// Stage base values for conversion calculation
 const stageData = {
   'setup-call': {
     label: 'Set up call',
-    score: 20,
+    baseValue: 20,
     color:
       'bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600',
   },
   discovery: {
     label: 'Discovery call',
-    score: 37.5, // 35-40% range
+    baseValue: 40,
     color:
       'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700',
   },
   demo: {
     label: 'Demo',
-    score: 57.5, // 55-60% range
+    baseValue: 60,
     color:
       'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700',
   },
   pricing: {
     label: 'Pricing call',
-    score: 77.5, // 75-80% range
+    baseValue: 80,
     color:
       'bg-lime-100 dark:bg-lime-900/30 text-lime-700 dark:text-lime-300 border-lime-300 dark:border-lime-700',
   },
   secured: {
     label: 'Secured',
-    score: 100,
+    baseValue: 100,
     color:
       'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
   },
   'did-not-close': {
     label: 'Did not close',
-    score: 0,
+    baseValue: 0,
     color:
       'bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-600',
   },
@@ -107,6 +107,26 @@ const stageLabels = {
   secured: stageData.secured.label,
   'did-not-close': stageData['did-not-close'].label,
 };
+
+// Calculate conversion percentage for a lead
+// Formula: Base value (stage) × Multiplier (relationship)
+// Special cases: Secured = 100%, Did Not Close = 0%
+function calculateConversionPercentage(
+  stage: Lead['stage'],
+  relationship: Lead['relationship']
+): number {
+  // Special cases
+  if (stage === 'secured') return 100;
+  if (stage === 'did-not-close') return 0;
+
+  // Calculate: base value × multiplier
+  const baseValue = stageData[stage].baseValue;
+  const multiplier = relationshipData[relationship].multiplier;
+  const result = baseValue * multiplier;
+
+  // Cap at 100% (e.g., pricing call with "know well" = 80 × 1.2 = 96%)
+  return Math.min(Math.round(result), 100);
+}
 
 export default function LeadsPage() {
   const { leads, addLead, updateLead, loading, initialized } = useAppStore();
@@ -479,8 +499,8 @@ export default function LeadsPage() {
             <div className="hidden md:block bg-card border border-border rounded-2xl overflow-hidden">
               <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
                 <div className="col-span-2">Name</div>
-                <div className="col-span-2">Warmth</div>
-                <div className="col-span-4">Reason</div>
+                <div className="col-span-3">Warmth</div>
+                <div className="col-span-3">Reason</div>
                 <div className="col-span-3">Progress</div>
                 <div className="col-span-1 text-right">Actual %</div>
               </div>
@@ -505,20 +525,17 @@ export default function LeadsPage() {
                       </div>
                     </div>
 
-                    <div className="col-span-2">
+                    <div className="col-span-3">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
                           relationshipData[lead.relationship].color
                         }`}
                       >
                         {relationshipLabels[lead.relationship]}
-                        <span className="text-[10px] opacity-75">
-                          {relationshipData[lead.relationship].score}%
-                        </span>
                       </span>
                     </div>
 
-                    <div className="col-span-4">
+                    <div className="col-span-3">
                       <p className="text-sm text-foreground line-clamp-2">
                         {lead.reason}
                       </p>
@@ -541,27 +558,20 @@ export default function LeadsPage() {
                             }`}
                           >
                             {stageLabels[lead.stage]}
-                            <span className="text-[10px] opacity-75">
-                              {stageData[lead.stage].score}%
-                            </span>
                           </span>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="setup-call">
-                            Set up call (20%)
+                            Set up call
                           </SelectItem>
                           <SelectItem value="discovery">
-                            Discovery call (37.5%)
+                            Discovery call
                           </SelectItem>
-                          <SelectItem value="demo">Demo (57.5%)</SelectItem>
-                          <SelectItem value="pricing">
-                            Pricing call (77.5%)
-                          </SelectItem>
-                          <SelectItem value="secured">
-                            Secured ✅ (100%)
-                          </SelectItem>
+                          <SelectItem value="demo">Demo</SelectItem>
+                          <SelectItem value="pricing">Pricing call</SelectItem>
+                          <SelectItem value="secured">Secured ✅</SelectItem>
                           <SelectItem value="did-not-close">
-                            Did not close (0%)
+                            Did not close
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -570,22 +580,29 @@ export default function LeadsPage() {
                     <div className="col-span-1 text-right">
                       <span
                         className={`text-sm font-semibold ${
-                          statistics.relationshipConversion[
+                          calculateConversionPercentage(
+                            lead.stage,
                             lead.relationship
-                          ] >= 70
+                          ) >= 70
                             ? 'text-emerald-600'
-                            : statistics.relationshipConversion[
+                            : calculateConversionPercentage(
+                                lead.stage,
                                 lead.relationship
-                              ] >= 40
+                              ) >= 40
                             ? 'text-yellow-600'
-                            : statistics.relationshipConversion[
+                            : calculateConversionPercentage(
+                                lead.stage,
                                 lead.relationship
-                              ] >= 20
+                              ) >= 20
                             ? 'text-orange-600'
                             : 'text-red-600'
                         }`}
                       >
-                        {statistics.relationshipConversion[lead.relationship]}%
+                        {calculateConversionPercentage(
+                          lead.stage,
+                          lead.relationship
+                        )}
+                        %
                       </span>
                     </div>
                   </div>
@@ -615,18 +632,24 @@ export default function LeadsPage() {
                       </CardTitle>
                       <span
                         className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                          statistics.relationshipConversion[
+                          calculateConversionPercentage(
+                            lead.stage,
                             lead.relationship
-                          ] >= 70
+                          ) >= 70
                             ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                            : statistics.relationshipConversion[
+                            : calculateConversionPercentage(
+                                lead.stage,
                                 lead.relationship
-                              ] >= 40
+                              ) >= 40
                             ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                             : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                         }`}
                       >
-                        {statistics.relationshipConversion[lead.relationship]}%
+                        {calculateConversionPercentage(
+                          lead.stage,
+                          lead.relationship
+                        )}
+                        %
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2">
@@ -637,7 +660,7 @@ export default function LeadsPage() {
                       >
                         {relationshipLabels[lead.relationship]}
                         <span className="text-[10px] opacity-75">
-                          {relationshipData[lead.relationship].score}%
+                          ×{relationshipData[lead.relationship].multiplier}
                         </span>
                       </span>
                       <div onClick={(e) => e.stopPropagation()}>
@@ -657,7 +680,7 @@ export default function LeadsPage() {
                             >
                               {stageLabels[lead.stage]}
                               <span className="text-[10px] opacity-75">
-                                {stageData[lead.stage].score}%
+                                {stageData[lead.stage].baseValue}%
                               </span>
                             </span>
                           </SelectTrigger>
@@ -666,11 +689,11 @@ export default function LeadsPage() {
                               Set up call (20%)
                             </SelectItem>
                             <SelectItem value="discovery">
-                              Discovery call (37.5%)
+                              Discovery call (40%)
                             </SelectItem>
-                            <SelectItem value="demo">Demo (57.5%)</SelectItem>
+                            <SelectItem value="demo">Demo (60%)</SelectItem>
                             <SelectItem value="pricing">
-                              Pricing call (77.5%)
+                              Pricing call (80%)
                             </SelectItem>
                             <SelectItem value="secured">
                               Secured ✅ (100%)
