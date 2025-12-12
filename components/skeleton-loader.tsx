@@ -1,5 +1,70 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
+export function HomeSkeleton() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Hero Section skeleton */}
+        <div className="text-center mb-12 space-y-6">
+          <div className="h-8 w-48 bg-muted animate-pulse rounded-full mx-auto mb-4" />
+          <div className="h-24 w-96 bg-muted animate-pulse rounded-lg mx-auto mb-4" />
+          <div className="h-8 w-full max-w-2xl bg-muted animate-pulse rounded-lg mx-auto" />
+        </div>
+
+        {/* Cards skeleton */}
+        <div className="grid md:grid-cols-2 gap-6 mb-16">
+          {[1, 2].map((i) => (
+            <Card
+              key={i}
+              className="shadow-lg border-2"
+            >
+              <CardHeader>
+                <div className="h-6 w-48 bg-muted animate-pulse rounded mb-2" />
+                <div className="h-4 w-full bg-muted animate-pulse rounded" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-32 bg-muted animate-pulse rounded-lg" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Heatmap skeleton */}
+        <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
+          <div className="h-8 w-48 bg-muted animate-pulse rounded mb-2" />
+          <div className="h-4 w-96 bg-muted animate-pulse rounded mb-6" />
+
+          {/* Grid skeleton */}
+          <div className="w-full overflow-x-auto">
+            <div className="inline-grid grid-cols-20 gap-1.5 min-w-max">
+              {Array.from({ length: 100 }, (_, i) => (
+                <div
+                  key={i}
+                  className="w-3 h-3 rounded-sm bg-muted animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Legend skeleton */}
+          <div className="flex items-center gap-4 mt-6">
+            <div className="h-3 w-8 bg-muted animate-pulse rounded" />
+            <div className="flex gap-1.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="w-3 h-3 bg-muted animate-pulse rounded-sm"
+                />
+              ))}
+            </div>
+            <div className="h-3 w-8 bg-muted animate-pulse rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LeadsSkeleton() {
   return (
     <div className="min-h-screen bg-linear-to-b from-background to-secondary/20">

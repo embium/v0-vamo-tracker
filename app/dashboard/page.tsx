@@ -1,10 +1,20 @@
-import { EvidenceGrid } from "@/components/evidence-grid"
-import { DailyTaskCard } from "@/components/daily-task-card"
-import { UnlockCustomersCard } from "@/components/unlock-customers-card"
-import { OnboardingModal } from "@/components/onboarding-modal"
-import { Sparkles } from "lucide-react"
+'use client';
+
+import { EvidenceGrid } from '@/components/evidence-grid';
+import { DailyTaskCard } from '@/components/daily-task-card';
+import { UnlockCustomersCard } from '@/components/unlock-customers-card';
+import { OnboardingModal } from '@/components/onboarding-modal';
+import { HomeSkeleton } from '@/components/skeleton-loader';
+import { useAppStore } from '@/lib/store';
+import { Sparkles } from 'lucide-react';
 
 export default function HomePage() {
+  const { initialized } = useAppStore();
+
+  if (!initialized) {
+    return <HomeSkeleton />;
+  }
+
   return (
     <>
       <OnboardingModal />
@@ -21,11 +31,13 @@ export default function HomePage() {
             <h1 className="text-7xl md:text-9xl font-bold font-serif tracking-tight">
               <span className="text-foreground">100 Days to</span>
               <br />
-              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">$100K</span>
+              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                $100K
+              </span>
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Get 10 paying customers in 100 days, and unlock the{" "}
+              Get 10 paying customers in 100 days, and unlock the{' '}
               <span className="font-semibold text-foreground">$100K prize</span>
             </p>
           </div>
@@ -37,8 +49,12 @@ export default function HomePage() {
 
           {/* Evidence Heatmap */}
           <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
-            <h2 className="text-2xl font-bold font-serif mb-2">Your Progress</h2>
-            <p className="text-sm text-muted-foreground mb-6">A visual representation of your daily evidence commits</p>
+            <h2 className="text-2xl font-bold font-serif mb-2">
+              Your Progress
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              A visual representation of your daily evidence commits
+            </p>
             <EvidenceGrid />
             <div className="flex items-center gap-4 mt-6 text-xs text-muted-foreground">
               <span>Less</span>
@@ -55,5 +71,5 @@ export default function HomePage() {
         </div>
       </div>
     </>
-  )
+  );
 }
