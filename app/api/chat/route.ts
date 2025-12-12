@@ -1,5 +1,4 @@
-import { ollama } from 'ollama-ai-provider-v2';
-import { openai } from '@ai-sdk/openai';
+import 'dotenv/config';
 import { convertToModelMessages, streamText } from 'ai';
 
 const systemPrompt = `### SYSTEM PROMPT ###
@@ -27,12 +26,8 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
-  const useOllama = process.env.USE_OLLAMA === 'true';
-  const model = useOllama
-    ? ollama(process.env.OLLAMA_MODEL!)
-    : openai('gpt-5-nano');
   const result = streamText({
-    model,
+    model: 'openai/gpt-5',
     system: systemPrompt,
     messages: convertToModelMessages(messages),
   });
