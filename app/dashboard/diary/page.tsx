@@ -182,6 +182,25 @@ export default function DiaryPage() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          // Check file size (1MB = 1,048,576 bytes)
+                          const maxSize = 1 * 1024 * 1024; // 1MB in bytes
+                          if (file.size > maxSize) {
+                            toast({
+                              title: 'File Too Large',
+                              description: `Image size is ${(
+                                file.size /
+                                1024 /
+                                1024
+                              ).toFixed(
+                                2
+                              )}MB. Please choose an image smaller than 1MB.`,
+                              variant: 'destructive',
+                            });
+                            // Reset the input
+                            e.target.value = '';
+                            return;
+                          }
+
                           const reader = new FileReader();
                           reader.onload = () =>
                             setImageFile(reader.result as string);
@@ -196,7 +215,9 @@ export default function DiaryPage() {
                     >
                       <Upload className="h-5 w-5 text-muted-foreground group-hover:text-emerald-600 transition-colors" />
                       <span className="text-sm font-medium text-muted-foreground group-hover:text-emerald-600 transition-colors">
-                        {imageFile ? 'Change Image' : 'Choose an image file'}
+                        {imageFile
+                          ? 'Change Image'
+                          : 'Choose an image file (max 1MB)'}
                       </span>
                     </label>
                   </div>
