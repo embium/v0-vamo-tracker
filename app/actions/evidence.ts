@@ -26,7 +26,7 @@ const evidenceDataSchema = z
   .refine(
     (data) => {
       if (data.type === 'image' || data.type === 'screenshot') {
-        return data.content.length <= 15000000; // ~10MB base64
+        return data.content.length <= 1048576; // 1 MB
       }
       return data.content.length <= 50000;
     },
