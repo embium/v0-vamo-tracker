@@ -71,7 +71,9 @@ export async function addEvidenceAction(data: {
     const validatedData = evidenceDataSchema.parse(data);
 
     const userId = session.user.id;
-    const today = new Date().toDateString();
+    // Use the client-provided date to determine "today" in the user's timezone
+    // This prevents timezone bugs where server (UTC) has a different "today" than the user
+    const today = new Date(validatedData.date).toDateString();
 
     // Get current challenge state
     const challenge = await getOrCreateChallenge(userId);

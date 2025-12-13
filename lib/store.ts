@@ -290,7 +290,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   checkAndUpdateStreak: async () => {
     try {
-      await checkStreakAction();
+      // Pass the user's local date to prevent timezone bugs
+      await checkStreakAction(new Date().toISOString());
       await get().refreshData();
     } catch (error) {
       set({
